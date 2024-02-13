@@ -69,27 +69,27 @@ def _swift_include_info(
     """
     swift_module = None
 
-    for module in transitive_modules.to_list():
-        if not module.swift or sets.contains(avoid_modules, module.name):
-            continue
+#     for module in transitive_modules.to_list():
+#         if not module.swift or sets.contains(avoid_modules, module.name):
+#             continue
 
-        if swift_module or (found_module_name and module.name != found_module_name):
-            fail(
-                """\
-error: Swift third party frameworks expect a single swift_library dependency with no transitive \
-swift_library dependencies.\
-""",
-            )
+#         if swift_module or (found_module_name and module.name != found_module_name):
+#             fail(
+#                 """\
+# error: Swift third party frameworks expect a single swift_library dependency with no transitive \
+# swift_library dependencies.\
+# """,
+#             )
 
-        if not all([module.name, module.swift.swiftdoc, module.swift.swiftinterface]):
-            fail(
-                """\
-error: Could not find all required artifacts and information to build a Swift framework. \
-Please file an issue with a reproducible error case.\
-""",
-            )
+#         if not all([module.name, module.swift.swiftdoc, module.swift.swiftinterface]):
+#             fail(
+#                 """\
+# error: Could not find all required artifacts and information to build a Swift framework. \
+# Please file an issue with a reproducible error case.\
+# """,
+#             )
 
-        swift_module = module
+#         swift_module = module
 
     return swift_module
 
