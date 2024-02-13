@@ -59,7 +59,7 @@ issue with a reproducible error case.
         swift_module = swift_info_support.swift_include_info(
             avoid_modules = avoid_modules,
             found_module_name = found_module_name,
-            transitive_modules = None,
+            transitive_modules = [],
         )
 
         # If headers are generated, they should be generated equally for all archs, so just take the
