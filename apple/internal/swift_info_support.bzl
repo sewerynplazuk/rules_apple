@@ -81,13 +81,13 @@ swift_library dependencies.\
 """,
             )
 
-#         if not all([module.name, module.swift.swiftdoc, module.swift.swiftinterface]):
-#             fail(
-#                 """\
-# error: Could not find all required artifacts and information to build a Swift framework. \
-# Please file an issue with a reproducible error case.\
-# """,
-#             )
+        if not all([module.name, module.swift.swiftdoc, module.swift.swiftinterface]):
+            fail(
+                """\
+error: Could not find all required artifacts and information to build a Swift framework. \
+Please file an issue with a reproducible error case.\
+""",
+            )
 
         swift_module = module
 
