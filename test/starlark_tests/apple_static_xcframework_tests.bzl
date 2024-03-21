@@ -19,6 +19,10 @@ load(
     "common",
 )
 load(
+    "@build_bazel_rules_apple//apple/build_settings:build_settings.bzl",
+    "build_settings_labels",
+)
+load(
     "//test/starlark_tests/rules:common_verification_tests.bzl",
     "archive_contents_test",
 )
@@ -127,6 +131,9 @@ def apple_static_xcframework_test_suite(name):
         name = "{}_swift_generates_header_test".format(name),
         build_type = "device",
         target_under_test = "//test/starlark_tests/targets_under_test/apple:ios_static_xcfmwk_with_swift_generated_headers",
+        build_settings = {
+            build_settings_labels.use_library_evolution: "True",
+        },
         contains = [
             "$BUNDLE_ROOT/Info.plist",
             "$BUNDLE_ROOT/ios-arm64/ios_static_xcfmwk_with_swift_generated_headers.framework/Headers/ios_static_xcfmwk_with_swift_generated_headers.h",

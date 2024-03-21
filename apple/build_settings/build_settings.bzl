@@ -38,6 +38,12 @@ Enables Bazel's tree artifacts for Apple bundle rules (instead of archives).
 """,
         default = False,
     ),
+    "use_library_evolution": struct(
+        doc = """
+Enables library evolution, allowing for the emission of .swiftinterface files.
+""",
+        default = True,
+    ),
 }
 
 _BUILD_SETTING_LABELS = {
