@@ -109,6 +109,7 @@ Internal Error: A verification test should only specify `apple_platforms` or `cp
     # Build settings
     test_build_settings = {
         build_settings_labels.signing_certificate_name: "-",
+        build_settings_labels.use_library_evolution: "True",
     }
     test_build_settings.update(getattr(attr, "build_settings", {}))
     for build_setting in _CUSTOM_BUILD_SETTINGS:

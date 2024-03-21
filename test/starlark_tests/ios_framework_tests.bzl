@@ -19,10 +19,6 @@ load(
     "common",
 )
 load(
-    "@build_bazel_rules_apple//apple/build_settings:build_settings.bzl",
-    "build_settings_labels",
-)
-load(
     "//test/starlark_tests/rules:analysis_failure_message_test.bzl",
     "analysis_failure_message_test",
 )
@@ -415,9 +411,6 @@ def ios_framework_test_suite(name):
         name = "{}_static_framework_contains_swiftinterface".format(name),
         build_type = "simulator",
         target_under_test = "//test/starlark_tests/targets_under_test/ios:swift_static_framework",
-        build_settings = {
-            build_settings_labels.use_library_evolution: "True",
-        },
         contains = [
             "$BUNDLE_ROOT/Headers/swift_framework_lib.h",
             "$BUNDLE_ROOT/Modules/swift_framework_lib.swiftmodule/x86_64.swiftdoc",

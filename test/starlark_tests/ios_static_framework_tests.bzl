@@ -19,10 +19,6 @@ load(
     "common",
 )
 load(
-    "@build_bazel_rules_apple//apple/build_settings:build_settings.bzl",
-    "build_settings_labels",
-)
-load(
     "//test/starlark_tests/rules:analysis_failure_message_test.bzl",
     "analysis_failure_message_test",
 )
@@ -122,9 +118,6 @@ def ios_static_framework_test_suite(name):
         build_type = "simulator",
         compilation_mode = "opt",
         target_under_test = "//test/starlark_tests/targets_under_test/ios:static_fmwk_with_swift_and_avoid_deps",
-        build_settings = {
-            build_settings_labels.use_library_evolution: "True",
-        },
         contains = [
             "$BUNDLE_ROOT/Modules/SwiftFmwkUpperLib.swiftmodule/x86_64.swiftdoc",
             "$BUNDLE_ROOT/Modules/SwiftFmwkUpperLib.swiftmodule/x86_64.swiftinterface",
@@ -191,9 +184,6 @@ def ios_static_framework_test_suite(name):
         build_type = "simulator",
         compilation_mode = "opt",
         target_under_test = "//test/starlark_tests/targets_under_test/ios:static_framework_with_generated_header",
-        build_settings = {
-            build_settings_labels.use_library_evolution: "True",
-        },
         contains = [
             "$BUNDLE_ROOT/Headers/SwiftStaticFmwkWithGenHeader.h",
             "$BUNDLE_ROOT/Modules/module.modulemap",

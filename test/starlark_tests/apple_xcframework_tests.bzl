@@ -19,10 +19,6 @@ load(
     "common",
 )
 load(
-    "@build_bazel_rules_apple//apple/build_settings:build_settings.bzl",
-    "build_settings_labels",
-)
-load(
     "//test/starlark_tests/rules:analysis_failure_message_test.bzl",
     "analysis_failure_message_test",
     "analysis_failure_message_with_tree_artifact_outputs_test",
@@ -489,9 +485,6 @@ def apple_xcframework_test_suite(name):
         build_type = "simulator",
         compilation_mode = "opt",
         target_under_test = "//test/starlark_tests/targets_under_test/apple:ios_swift_xcframework_with_generated_header",
-        build_settings = {
-            build_settings_labels.use_library_evolution: "True",
-        },
         contains = [
             "$BUNDLE_ROOT/ios-arm64_x86_64-simulator/SwiftFmwkWithGenHeader.framework/Headers/SwiftFmwkWithGenHeader.h",
             "$BUNDLE_ROOT/ios-arm64_x86_64-simulator/SwiftFmwkWithGenHeader.framework/Modules/module.modulemap",
