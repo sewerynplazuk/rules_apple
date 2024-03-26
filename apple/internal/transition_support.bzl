@@ -324,7 +324,7 @@ def _resolved_environment_arch_for_arch(*, arch, environment, platform_type):
 
 def _command_line_options_for_xcframework_platform(
         *,
-        attr,
+        ctx,
         minimum_os_version,
         platform_attr,
         platform_type,
@@ -333,7 +333,7 @@ def _command_line_options_for_xcframework_platform(
     """Generates a dictionary of command line options keyed by 1:2+ transition for this platform.
 
     Args:
-        attr: The attributes passed to the transition function.
+        ctx: The context passed to the transition function.
         minimum_os_version: A string representing the minimum OS version specified for this
             platform, represented as a dotted version number (for example, `"9.0"`).
         platform_attr: The attribute for the apple platform specifying in dictionary form which
@@ -368,7 +368,7 @@ def _command_line_options_for_xcframework_platform(
                     platform_type = platform_type,
                 ): _command_line_options(
                     emit_swiftinterface = _should_emit_swiftinterface(
-                        attr,
+                        ctx,
                         is_xcframework = True,
                     ),
                     environment_arch = resolved_environment_arch,
@@ -381,7 +381,7 @@ def _command_line_options_for_xcframework_platform(
 
     return output_dictionary
 
-def _should_emit_swiftinterface(attr, is_xcframework = False):
+def _should_emit_swiftinterface(ctx, is_xcframework = False):
     """Determines if a .swiftinterface file should be generated for Swift dependencies.
 
     By providing the option to disable the emission of these files, it allows consumers to opt out
@@ -389,7 +389,7 @@ def _should_emit_swiftinterface(attr, is_xcframework = False):
     """
 
     # Do not emit swiftinterface file when library evolution is disabled for a given build
-    apple_xplat_toolchain_info = attr._xplat_toolchain[AppleXPlatToolsToolchainInfo]
+    apple_xplat_toolchain_info = ctx.attr._xplat_toolchain[AppleXPlatToolsToolchainInfo]
     if not apple_xplat_toolchain_info.build_settings.use_library_evolution:
         return False
 
@@ -399,11 +399,11 @@ def _should_emit_swiftinterface(attr, is_xcframework = False):
     # rules allows for selective configuration of Swift build settings across the build graph.
     return is_xcframework or hasattr(attr, "_emitswiftinterface")
 
-def _apple_rule_base_transition_impl(settings, attr):
+def _apple_rule_base_transition_impl(settings, attr, ctx):
     """Rule transition for Apple rules using Bazel CPUs and a valid Apple split transition."""
     platform_type = attr.platform_type
     return _command_line_options(
-        emit_swiftinterface = _should_emit_swiftinterface(attr),
+        emit_swiftinterface = _should_emit_swiftinterface(ctx),
         environment_arch = _environment_archs(platform_type, settings)[0],
         minimum_os_version = attr.minimum_os_version,
         platform_type = platform_type,
@@ -464,7 +464,7 @@ _apple_rule_base_transition = transition(
     outputs = _apple_rule_base_transition_outputs,
 )
 
-def _apple_platforms_rule_base_transition_impl(settings, attr):
+def _apple_platforms_rule_base_transition_impl(settings, attr, ctx):
     """Rule transition for Apple rules using Bazel platforms."""
     minimum_os_version = attr.minimum_os_version
     platform_type = attr.platform_type
@@ -474,7 +474,7 @@ def _apple_platforms_rule_base_transition_impl(settings, attr):
         environment_arch = _environment_archs(platform_type, settings)[0]
     return _command_line_options(
         apple_platforms = settings["//command_line_option:apple_platforms"],
-        emit_swiftinterface = _should_emit_swiftinterface(attr),
+        emit_swiftinterface = _should_emit_swiftinterface(ctx),
         environment_arch = environment_arch,
         minimum_os_version = minimum_os_version,
         platform_type = platform_type,
@@ -487,7 +487,7 @@ _apple_platforms_rule_base_transition = transition(
     outputs = _apple_rule_base_transition_outputs,
 )
 
-def _apple_platforms_rule_bundle_output_base_transition_impl(settings, attr):
+def _apple_platforms_rule_bundle_output_base_transition_impl(settings, attr, ctx):
     """Rule transition for Apple rules using Bazel platforms which force bundle outputs."""
     minimum_os_version = attr.minimum_os_version
     platform_type = attr.platform_type
@@ -497,7 +497,7 @@ def _apple_platforms_rule_bundle_output_base_transition_impl(settings, attr):
         environment_arch = _environment_archs(platform_type, settings)[0]
     return _command_line_options(
         apple_platforms = settings["//command_line_option:apple_platforms"],
-        emit_swiftinterface = _should_emit_swiftinterface(attr),
+        emit_swiftinterface = _should_emit_swiftinterface(ctx),
         environment_arch = environment_arch,
         force_bundle_outputs = True,
         minimum_os_version = minimum_os_version,
@@ -511,14 +511,14 @@ _apple_platforms_rule_bundle_output_base_transition = transition(
     outputs = _apple_rule_base_transition_outputs,
 )
 
-def _apple_rule_arm64_as_arm64e_transition_impl(settings, attr):
+def _apple_rule_arm64_as_arm64e_transition_impl(settings, attr, ctx):
     """Rule transition for Apple rules that map arm64 to arm64e."""
     key = "//command_line_option:macos_cpus"
 
     # These additional settings are sent to both the base implementation and the final transition.
     additional_settings = {key: [arch if arch != "arm64" else "arm64e" for arch in settings[key]]}
     return dicts.add(
-        _apple_rule_base_transition_impl(dicts.add(settings, additional_settings), attr),
+        _apple_rule_base_transition_impl(dicts.add(settings, additional_settings), attr, ctx),
         additional_settings,
     )
 
@@ -528,7 +528,7 @@ _apple_rule_arm64_as_arm64e_transition = transition(
     outputs = _apple_rule_base_transition_outputs + ["//command_line_option:macos_cpus"],
 )
 
-def _apple_universal_binary_rule_transition_impl(settings, attr):
+def _apple_universal_binary_rule_transition_impl(settings, attr, ctx):
     """Rule transition for `apple_universal_binary` supporting forced CPUs."""
     forced_cpus = attr.forced_cpus
     platform_type = attr.platform_type
@@ -541,7 +541,7 @@ def _apple_universal_binary_rule_transition_impl(settings, attr):
         new_settings[_platform_specific_cpu_setting_name(platform_type)] = forced_cpus
 
     # Next, apply the base transition and get its output settings.
-    new_settings = _apple_rule_base_transition_impl(new_settings, attr)
+    new_settings = _apple_rule_base_transition_impl(new_settings, attr, ctx)
 
     # The output settings from applying the base transition won't have the
     # platform-specific CPU flags, so we need to re-apply those before returning
@@ -569,12 +569,12 @@ _apple_universal_binary_rule_transition = transition(
     outputs = _apple_universal_binary_rule_transition_outputs,
 )
 
-def _apple_platform_split_transition_impl(settings, attr):
+def _apple_platform_split_transition_impl(settings, attr, ctx):
     """Starlark 1:2+ transition for Apple platform-aware rules"""
     output_dictionary = {}
     invalid_requested_archs = []
 
-    emit_swiftinterface = _should_emit_swiftinterface(attr)
+    emit_swiftinterface = _should_emit_swiftinterface(ctx)
 
     if settings["//command_line_option:incompatible_enable_apple_toolchain_resolution"]:
         platforms = (
