@@ -389,7 +389,7 @@ def _should_emit_swiftinterface(attr, is_xcframework = False):
     """
 
     # Do not emit swiftinterface file when library evolution is disabled for a given build
-    apple_xplat_toolchain_info = ctx.attr._xplat_toolchain[AppleXPlatToolsToolchainInfo]
+    apple_xplat_toolchain_info = attr._xplat_toolchain[AppleXPlatToolsToolchainInfo]
     if not apple_xplat_toolchain_info.build_settings.use_library_evolution:
         return False
 
