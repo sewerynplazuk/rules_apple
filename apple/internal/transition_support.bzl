@@ -689,6 +689,7 @@ def _xcframework_transition_impl(settings, attr):
             target_environments.append("simulator")
 
         command_line_options = _command_line_options_for_xcframework_platform(
+            attr = attr,
             minimum_os_version = attr.minimum_os_versions.get(platform_type),
             platform_attr = getattr(attr, platform_type),
             platform_type = platform_type,
