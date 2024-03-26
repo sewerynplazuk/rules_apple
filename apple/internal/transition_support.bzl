@@ -32,6 +32,10 @@ part on the language used for XCFramework library identifiers:
     getting the right Apple toolchain to build outputs with from the Apple Crosstool.
 """
 
+load(
+    "@build_bazel_rules_apple//apple/internal:apple_toolchains.bzl",
+    "AppleXPlatToolsToolchainInfo",
+)
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(
     "@build_bazel_apple_support//configs:platforms.bzl",
@@ -249,7 +253,6 @@ def _command_line_options(
     default_platforms = [settings[_CPU_TO_DEFAULT_PLATFORM_FLAG[cpu]]] if _is_bazel_7 else []
     return {
         build_settings_labels.use_tree_artifacts_outputs: force_bundle_outputs if force_bundle_outputs else settings[build_settings_labels.use_tree_artifacts_outputs],
-        build_settings_labels.use_library_evolution: settings[build_settings_labels.use_library_evolution],
         "//command_line_option:apple configuration distinguisher": "applebin_" + platform_type,
         "//command_line_option:apple_platform_type": platform_type,
         "//command_line_option:apple_platforms": apple_platforms,
@@ -321,6 +324,7 @@ def _resolved_environment_arch_for_arch(*, arch, environment, platform_type):
 
 def _command_line_options_for_xcframework_platform(
         *,
+        attr,
         minimum_os_version,
         platform_attr,
         platform_type,
@@ -329,6 +333,7 @@ def _command_line_options_for_xcframework_platform(
     """Generates a dictionary of command line options keyed by 1:2+ transition for this platform.
 
     Args:
+        attr: The attributes passed to the transition function.
         minimum_os_version: A string representing the minimum OS version specified for this
             platform, represented as a dotted version number (for example, `"9.0"`).
         platform_attr: The attribute for the apple platform specifying in dictionary form which
@@ -363,7 +368,7 @@ def _command_line_options_for_xcframework_platform(
                     platform_type = platform_type,
                 ): _command_line_options(
                     emit_swiftinterface = _should_emit_swiftinterface(
-                        settings,
+                        attr,
                         is_xcframework = True,
                     ),
                     environment_arch = resolved_environment_arch,
@@ -376,7 +381,7 @@ def _command_line_options_for_xcframework_platform(
 
     return output_dictionary
 
-def _should_emit_swiftinterface(settings, is_xcframework = False):
+def _should_emit_swiftinterface(attr, is_xcframework = False):
     """Determines if a .swiftinterface file should be generated for Swift dependencies.
 
     By providing the option to disable the emission of these files, it allows consumers to opt out
@@ -384,7 +389,8 @@ def _should_emit_swiftinterface(settings, is_xcframework = False):
     """
 
     # Do not emit swiftinterface file when library evolution is disabled for a given build
-    if not settings[build_settings_labels.use_library_evolution]:
+    apple_xplat_toolchain_info = ctx.attr._xplat_toolchain[AppleXPlatToolsToolchainInfo]
+    if not apple_xplat_toolchain_info.build_settings.use_library_evolution:
         return False
 
     # For iOS and tvOS static frameworks, it's historically been required for the underlying swift_library targets
@@ -397,7 +403,7 @@ def _apple_rule_base_transition_impl(settings, attr):
     """Rule transition for Apple rules using Bazel CPUs and a valid Apple split transition."""
     platform_type = attr.platform_type
     return _command_line_options(
-        emit_swiftinterface = _should_emit_swiftinterface(settings),
+        emit_swiftinterface = _should_emit_swiftinterface(attr),
         environment_arch = _environment_archs(platform_type, settings)[0],
         minimum_os_version = attr.minimum_os_version,
         platform_type = platform_type,
@@ -410,7 +416,6 @@ def _apple_rule_base_transition_impl(settings, attr):
 # - https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/cpp/CppOptions.java
 _apple_rule_common_transition_inputs = [
     build_settings_labels.use_tree_artifacts_outputs,
-    build_settings_labels.use_library_evolution,
     "//command_line_option:apple_crosstool_top",
 ] + _CPU_TO_DEFAULT_PLATFORM_FLAG.values()
 _apple_rule_base_transition_inputs = _apple_rule_common_transition_inputs + [
@@ -429,7 +434,6 @@ _apple_platform_transition_inputs = _apple_platforms_rule_base_transition_inputs
 ]
 _apple_rule_base_transition_outputs = [
     build_settings_labels.use_tree_artifacts_outputs,
-    build_settings_labels.use_library_evolution,
     "//command_line_option:apple configuration distinguisher",
     "//command_line_option:apple_platform_type",
     "//command_line_option:apple_platforms",
@@ -470,7 +474,7 @@ def _apple_platforms_rule_base_transition_impl(settings, attr):
         environment_arch = _environment_archs(platform_type, settings)[0]
     return _command_line_options(
         apple_platforms = settings["//command_line_option:apple_platforms"],
-        emit_swiftinterface = _should_emit_swiftinterface(settings),
+        emit_swiftinterface = _should_emit_swiftinterface(attr),
         environment_arch = environment_arch,
         minimum_os_version = minimum_os_version,
         platform_type = platform_type,
@@ -493,7 +497,7 @@ def _apple_platforms_rule_bundle_output_base_transition_impl(settings, attr):
         environment_arch = _environment_archs(platform_type, settings)[0]
     return _command_line_options(
         apple_platforms = settings["//command_line_option:apple_platforms"],
-        emit_swiftinterface = _should_emit_swiftinterface(settings),
+        emit_swiftinterface = _should_emit_swiftinterface(attr),
         environment_arch = environment_arch,
         force_bundle_outputs = True,
         minimum_os_version = minimum_os_version,
@@ -570,7 +574,7 @@ def _apple_platform_split_transition_impl(settings, attr):
     output_dictionary = {}
     invalid_requested_archs = []
 
-    emit_swiftinterface = _should_emit_swiftinterface(settings)
+    emit_swiftinterface = _should_emit_swiftinterface(attr)
 
     if settings["//command_line_option:incompatible_enable_apple_toolchain_resolution"]:
         platforms = (
